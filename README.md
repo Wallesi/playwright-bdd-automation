@@ -78,3 +78,42 @@ Variables de entorno relevantes (ver `playwright.config.ts`):
 ## Reportes
 
 `npm run test:report` genera un reporte HTML enriquecido en `reports/html-report` usando `multiple-cucumber-html-reporter`, además del reporte JSON/HTML crudo de Cucumber en `reports/`.
+
+## Calidad de código y convenciones de Git
+
+El proyecto usa **ESLint** + **Prettier** para el código y **Husky** para forzar convenciones de Git vía git hooks.
+
+```bash
+npm run lint          # eslint
+npm run lint:fix       # eslint --fix
+npm run format          # prettier --write
+npm run format:check     # prettier --check
+```
+
+### Nombres de rama
+
+Todo commit (salvo en `main`, `master`, `develop`, `dev`, `staging`) debe hacerse desde una rama con el patrón:
+
+```
+<tipo>/<descripcion-en-kebab-case>
+```
+
+Tipos válidos: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+
+Ejemplos: `feat/login-page`, `fix/navbar-overlap`, `test/dashboard-smoke`.
+
+La validación corre en el hook `pre-commit` (`scripts/validate-branch-name.js`).
+
+### Mensajes de commit (Conventional Commits)
+
+Los mensajes de commit se validan con **commitlint** (`commitlint.config.js`, hook `commit-msg`) siguiendo [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<tipo>(<scope opcional>): <descripcion>
+```
+
+Ejemplos válidos: `feat: add login page`, `fix(dashboard): correct welcome banner selector`, `test: add smoke tag to login scenario`.
+
+### Pre-commit
+
+Antes de cada commit, `lint-staged` corre `eslint --fix` y `prettier --write` solo sobre los archivos en stage (config en `package.json`).
