@@ -1,0 +1,15 @@
+{
+  "users": {
+    "validUser": {
+      "username": "standard_user",
+      "password": "SecurePass123!"
+    },
+    "invalidUser": {
+      "username": "invalid_user",
+      "password": "wrong_password"
+    }
+  },
+  "messages": {
+    "invalidCredentials": "Invalid username or password"
+  }
+}

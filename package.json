@@ -1,0 +1,55 @@
+{
+  "name": "playwright-automation",
+  "version": "1.0.0",
+  "description": "Playwright + Cucumber + POM test automation framework",
+  "private": true,
+  "scripts": {
+    "test": "cucumber-js",
+    "test:tags": "cucumber-js --tags",
+    "test:report": "npm run test; npm run report:generate",
+    "report:generate": "node utils/reportGenerator.js",
+    "pretest": "rimraf reports",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "playwright",
+    "cucumber",
+    "typescript",
+    "pom"
+  ],
+  "author": "",
+  "license": "ISC",
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,json,md}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@cucumber/cucumber": "^11.1.0",
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.16.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "multiple-cucumber-html-reporter": "^3.9.2",
+    "playwright": "^1.49.0",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0"
+  }
+}
