@@ -1,17 +1,17 @@
 # Playwright Automation Framework
 
-Framework de automatización E2E usando **Playwright** + **Cucumber (BDD)** + **Page Object Model**, escrito en TypeScript.
+End-to-end automation framework using **Playwright** + **Cucumber (BDD)** + **Page Object Model**, written in TypeScript.
 
-## Estructura de carpetas
+## Folder structure
 
 ```
-├── features/                # Especificaciones Gherkin, agrupadas por módulo
+├── features/                # Gherkin specs, grouped by module
 │   ├── login/
 │   │   └── login.feature
 │   ├── dashboard/
 │   │   └── dashboard.feature
 │   └── timesheet/
-├── steps/                   # Step definitions, agrupadas por módulo
+├── steps/                   # Step definitions, grouped by module
 │   ├── login/
 │   │   └── login.steps.ts
 │   └── dashboard/
@@ -20,68 +20,68 @@ Framework de automatización E2E usando **Playwright** + **Cucumber (BDD)** + **
 │   ├── BasePage.ts
 │   ├── LoginPage.ts
 │   └── DashboardPage.ts
-├── utils/                  # Helpers reutilizables
+├── utils/                  # Reusable helpers
 │   ├── commonUtils.ts
 │   ├── dateUtils.ts
 │   └── reportGenerator.js
-├── fixtures/                 # Datos de prueba
+├── fixtures/                 # Test data
 │   └── testData.json
-├── support/                  # World y hooks de Cucumber (ciclo de vida del browser)
+├── support/                  # Cucumber World and hooks (browser lifecycle)
 │   └── testSetup.ts
-├── reports/                  # Salida de reportes (generado, ignorado por git)
-├── cucumber.js               # Configuración del test runner de Cucumber
-├── playwright.config.ts      # Opciones de browser/context leídas por support/testSetup.ts
+├── reports/                  # Report output (generated, git-ignored)
+├── cucumber.js               # Cucumber test runner configuration
+├── playwright.config.ts      # Browser/context options read by support/testSetup.ts
 └── tsconfig.json
 ```
 
-## Requisitos
+## Requirements
 
 - Node.js 18+
 - npm
 
-## Instalación
+## Installation
 
 ```bash
 npm install
 npx playwright install
 ```
 
-Copiar `.env.example` a `.env` y ajustar los valores según el entorno.
+Copy `.env.example` to `.env` and adjust the values for your environment.
 
-## Ejecutar los tests
+## Running the tests
 
 ```bash
-npm test                     # corre todos los .feature
-npm run test:tags -- "@smoke"  # corre solo escenarios con el tag @smoke
-npm run test:report          # corre los tests y genera el reporte HTML
+npm test                     # run all .feature files
+npm run test:tags -- "@smoke"  # run only scenarios tagged @smoke
+npm run test:report          # run the tests and generate the HTML report
 ```
 
-Variables de entorno relevantes (ver `playwright.config.ts`):
+Relevant environment variables (see `playwright.config.ts`):
 
-| Variable   | Descripción                           | Default               |
-| ---------- | ------------------------------------- | --------------------- |
-| `BASE_URL` | URL base de la aplicación bajo prueba | `https://example.com` |
-| `BROWSER`  | `chromium` \| `firefox` \| `webkit`   | `chromium`            |
-| `HEADLESS` | `true` \| `false`                     | `true`                |
-| `SLOWMO`   | Delay en ms entre acciones (debug)    | `0`                   |
-| `TIMEOUT`  | Timeout por defecto en ms             | `30000`               |
-| `VIDEO`    | Graba video de cada escenario         | `false`               |
+| Variable   | Description                            | Default               |
+| ---------- | -------------------------------------- | --------------------- |
+| `BASE_URL` | Base URL of the application under test | `https://example.com` |
+| `BROWSER`  | `chromium` \| `firefox` \| `webkit`    | `chromium`            |
+| `HEADLESS` | `true` \| `false`                      | `true`                |
+| `SLOWMO`   | Delay in ms between actions (debug)    | `0`                   |
+| `TIMEOUT`  | Default timeout in ms                  | `30000`               |
+| `VIDEO`    | Record a video of each scenario        | `false`               |
 
-## Convenciones
+## Conventions
 
-- **Page Objects** (`pages/`): encapsulan locators e interacciones de una página; no contienen aserciones de negocio.
-- **Steps** (`steps/<modulo>/*.steps.ts`): traducen Gherkin a llamadas a Page Objects y contienen las aserciones (`expect`).
-- **World** (`support/testSetup.ts`): expone `this.page` / `this.context` / `this.browser` a cada step vía `CustomWorld`.
-- **Fixtures** (`fixtures/*.json`): datos de prueba (usuarios, mensajes esperados, etc.) importados por los steps.
-- Cada módulo de negocio (login, dashboard, timesheet, ...) tiene su carpeta espejada en `features/<modulo>/` y `steps/<modulo>/`.
+- **Page Objects** (`pages/`): encapsulate locators and page interactions; they don't contain business assertions.
+- **Steps** (`steps/<module>/*.steps.ts`): translate Gherkin into Page Object calls and contain the assertions (`expect`).
+- **World** (`support/testSetup.ts`): exposes `this.page` / `this.context` / `this.browser` to each step via `CustomWorld`.
+- **Fixtures** (`fixtures/*.json`): test data (users, expected messages, etc.) imported by the steps.
+- Each business module (login, dashboard, timesheet, ...) has a mirrored folder under `features/<module>/` and `steps/<module>/`.
 
-## Reportes
+## Reports
 
-`npm run test:report` genera un reporte HTML enriquecido en `reports/html-report` usando `multiple-cucumber-html-reporter`, además del reporte JSON/HTML crudo de Cucumber en `reports/`.
+`npm run test:report` generates an enriched HTML report at `reports/html-report` using `multiple-cucumber-html-reporter`, in addition to Cucumber's raw JSON/HTML report in `reports/`.
 
-## Calidad de código y convenciones de Git
+## Code quality and Git conventions
 
-El proyecto usa **ESLint** + **Prettier** para el código y **Husky** para forzar convenciones de Git vía git hooks.
+The project uses **ESLint** + **Prettier** for the code and **Husky** to enforce Git conventions via git hooks.
 
 ```bash
 npm run lint          # eslint
@@ -90,30 +90,30 @@ npm run format          # prettier --write
 npm run format:check     # prettier --check
 ```
 
-### Nombres de rama
+### Branch names
 
-Todo commit (salvo en `main`, `master`, `develop`, `dev`, `staging`) debe hacerse desde una rama con el patrón:
-
-```
-<tipo>/<descripcion-en-kebab-case>
-```
-
-Tipos válidos: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
-
-Ejemplos: `feat/login-page`, `fix/navbar-overlap`, `test/dashboard-smoke`.
-
-La validación corre en el hook `pre-commit` (`scripts/validate-branch-name.js`).
-
-### Mensajes de commit (Conventional Commits)
-
-Los mensajes de commit se validan con **commitlint** (`commitlint.config.js`, hook `commit-msg`) siguiendo [Conventional Commits](https://www.conventionalcommits.org/):
+Every commit (except on `main`, `master`, `develop`, `dev`, `staging`) must be made from a branch following this pattern:
 
 ```
-<tipo>(<scope opcional>): <descripcion>
+<type>/<kebab-case-description>
 ```
 
-Ejemplos válidos: `feat: add login page`, `fix(dashboard): correct welcome banner selector`, `test: add smoke tag to login scenario`.
+Valid types: `feat`, `fix`, `chore`.
+
+Examples: `feat/login-page`, `fix/navbar-overlap`, `chore/update-dependencies`.
+
+Validation runs in the `pre-commit` hook (`scripts/validate-branch-name.js`).
+
+### Commit messages (Conventional Commits)
+
+Commit messages are validated with **commitlint** (`commitlint.config.js`, `commit-msg` hook) following [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<optional scope>): <description>
+```
+
+Valid examples: `feat: add login page`, `fix(dashboard): correct welcome banner selector`, `test: add smoke tag to login scenario`.
 
 ### Pre-commit
 
-Antes de cada commit, `lint-staged` corre `eslint --fix` y `prettier --write` solo sobre los archivos en stage (config en `package.json`).
+Before each commit, `lint-staged` runs `eslint --fix` and `prettier --write` only on the staged files (configured in `package.json`).
