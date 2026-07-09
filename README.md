@@ -98,9 +98,9 @@ Every commit (except on `main`, `master`, `develop`, `dev`, `staging`) must be m
 <type>/<kebab-case-description>
 ```
 
-Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+Valid types: `feat`, `fix`, `chore`.
 
-Examples: `feat/login-page`, `fix/navbar-overlap`, `test/dashboard-smoke`.
+Examples: `feat/login-page`, `fix/navbar-overlap`, `chore/update-dependencies`.
 
 Validation runs in the `pre-commit` hook (`scripts/validate-branch-name.js`).
 

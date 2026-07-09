@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process');
 
-const VALID_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'];
+const VALID_TYPES = ['feat', 'fix', 'chore'];
 const BRANCH_REGEX = new RegExp(`^(${VALID_TYPES.join('|')})\\/[a-z0-9]+(?:-[a-z0-9]+)*$`);
 const EXEMPT_BRANCHES = ['main', 'master', 'develop', 'dev', 'staging'];
 
