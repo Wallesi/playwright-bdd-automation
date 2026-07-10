@@ -12,7 +12,7 @@ export class LoginPage extends BasePage {
     this.usernameInput = page.locator('#username');
     this.passwordInput = page.locator('#password');
     this.loginButton = page.locator('#doLogin');
-    this.errorMessage = page.getByRole('alert');
+    this.errorMessage = page.locator('[role="alert"].alert-danger');
   }
 
   async open(): Promise<void> {
@@ -23,6 +23,10 @@ export class LoginPage extends BasePage {
     await this.fill(this.usernameInput, username);
     await this.fill(this.passwordInput, password);
     await this.click(this.loginButton);
+  }
+
+  get errorMessageLocator(): Locator {
+    return this.errorMessage;
   }
 
   async getErrorMessage(): Promise<string> {

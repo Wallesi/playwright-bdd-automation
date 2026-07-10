@@ -30,5 +30,5 @@ Then('I should be redirected to the dashboard', async ({ page }) => {
 
 Then('I should see an error message {string}', async ({ page }, expectedMessage: string) => {
   const loginPage = new LoginPage(page);
-  expect(await loginPage.getErrorMessage()).toBe(expectedMessage);
+  await expect(loginPage.errorMessageLocator).toHaveText(expectedMessage);
 });
