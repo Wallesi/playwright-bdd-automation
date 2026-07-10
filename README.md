@@ -208,10 +208,10 @@ npx bddgen && npx playwright test --grep "Booking"
 
 Each `npm test` run generates two reports:
 
-| Report | Path | Purpose |
-| --- | --- | --- |
-| Playwright HTML | `playwright-report/index.html` | Debug: traces, screenshots, timeline per step |
-| Cucumber HTML | `cucumber-report/index.html` | Client-facing: scenarios in plain Gherkin, green/red per step |
+| Report          | Path                           | Purpose                                                       |
+| --------------- | ------------------------------ | ------------------------------------------------------------- |
+| Playwright HTML | `playwright-report/index.html` | Debug: traces, screenshots, timeline per step                 |
+| Cucumber HTML   | `cucumber-report/index.html`   | Client-facing: scenarios in plain Gherkin, green/red per step |
 
 ```bash
 npm run test:report   # open Playwright report
