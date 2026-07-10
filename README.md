@@ -5,30 +5,39 @@ End-to-end automation framework using **Playwright** + **playwright-bdd (Gherkin
 ## Folder structure
 
 ```
-├── features/                # Gherkin specs, grouped by module
-│   ├── login/
-│   │   └── login.feature
-│   ├── dashboard/
-│   │   └── dashboard.feature
-│   └── timesheet/
-├── steps/                   # Step definitions, grouped by module
-│   ├── login/
-│   │   └── login.steps.ts
-│   └── dashboard/
-│       └── dashboard.steps.ts
-├── pages/                  # Page Objects (POM)
-│   ├── BasePage.ts
-│   ├── LoginPage.ts
-│   └── DashboardPage.ts
-├── utils/                  # Reusable helpers
+├── features/                        # Gherkin specs, grouped by site section
+│   ├── admin/
+│   │   ├── login/
+│   │   │   └── login.feature
+│   │   └── dashboard/
+│   │       └── dashboard.feature
+│   └── landingPage/
+│       └── landingPage.feature
+├── steps/                           # Step definitions, mirroring features/ structure
+│   ├── admin/
+│   │   ├── login/
+│   │   │   └── login.steps.ts
+│   │   └── dashboard/
+│   │       └── dashboard.steps.ts
+│   └── landingPage/
+│       └── landingPage.steps.ts
+├── pages/                           # Page Objects (POM)
+│   ├── BasePage.ts                  # Shared base with click/fill/getText helpers
+│   ├── admin/
+│   │   ├── LoginPage.ts
+│   │   └── DashboardPage.ts
+│   └── landing/
+│       └── LandingPage.ts
+├── utils/                           # Reusable helpers
 │   ├── commonUtils.ts
 │   └── dateUtils.ts
-├── fixtures/                 # Test data
+├── fixtures/                        # Test data
 │   └── testData.json
-├── .features-gen/             # Playwright specs generated from .feature files (git-ignored)
-├── playwright-report/         # Playwright HTML report (generated, git-ignored)
-├── test-results/              # Traces/screenshots/videos per test (generated, git-ignored)
-├── playwright.config.ts      # Playwright config: BDD generation, browser/context options, workers, reporter
+├── .features-gen/                   # Playwright specs auto-generated from .feature files (git-ignored)
+├── playwright-report/               # Playwright HTML report (generated, git-ignored)
+├── cucumber-report/                 # Cucumber HTML report (generated, git-ignored)
+├── test-results/                    # Traces/screenshots/videos per test (generated, git-ignored)
+├── playwright.config.ts             # Playwright + BDD config: browsers, workers, reporters
 └── tsconfig.json
 ```
 
@@ -44,19 +53,18 @@ npm install
 npx playwright install
 ```
 
-Environment config lives directly in the versioned [`.env`](.env) file at the project root — adjust the values there for your environment (no secrets are stored in it, only run configuration).
+Create a `.env` file at the project root (see environment variables below). No secrets are stored — only run configuration.
 
 ## Running the tests
 
 ```bash
-npm test                       # generate specs from .feature files and run them
+npm test                       # generate specs from .feature files and run all tests
+npm run test:ui                # open Playwright UI mode to run tests interactively
 npm run test:tags -- "@smoke"  # run only scenarios tagged @smoke
-npm run test:report            # open the last generated HTML report
+npm run test:report            # open the last Playwright HTML report
 ```
 
-Tests run in parallel across multiple workers by default (see [Workers / parallel execution](#workers--parallel-execution)). You can also call Playwright's CLI directly for more control, e.g. `npx playwright test --project=chromium` or `npx playwright test --grep "@smoke"`.
-
-Relevant environment variables (see `playwright.config.ts`):
+Relevant environment variables:
 
 | Variable   | Description                            | Default               |
 | ---------- | -------------------------------------- | --------------------- |
@@ -65,72 +73,180 @@ Relevant environment variables (see `playwright.config.ts`):
 | `HEADLESS` | `true` \| `false`                      | `true`                |
 | `SLOWMO`   | Delay in ms between actions (debug)    | `0`                   |
 | `TIMEOUT`  | Default action timeout in ms           | `30000`               |
-| `VIDEO`    | Record a video of each scenario        | `false`               |
-| `WORKERS`  | Number of parallel workers (see below) | auto (or `2` on CI)   |
+| `VIDEO`    | `true` to record video for every test  | `false`               |
+| `WORKERS`  | Number of parallel workers             | auto (or `2` on CI)   |
+
+## Creating a test from scratch
+
+Every test is made up of three files that mirror each other across `features/`, `steps/`, and `pages/`. Here is the full process using a hypothetical **Booking** page as an example.
+
+### Step 1 — Create the Page Object
+
+Create `pages/landing/BookingPage.ts` extending `BasePage`:
+
+```typescript
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from '../BasePage';
+
+export class BookingPage extends BasePage {
+  private readonly bookingForm: Locator;
+  private readonly submitButton: Locator;
+  private readonly confirmationMessage: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    // Use IDs, roles, or attribute selectors — avoid fragile CSS paths
+    this.bookingForm = page.locator('#booking-form');
+    this.submitButton = page.locator('#submit-booking');
+    this.confirmationMessage = page.getByRole('alert');
+  }
+
+  async open(): Promise<void> {
+    await this.goto('/#booking');
+  }
+
+  async submitBooking(name: string, email: string): Promise<void> {
+    await this.fill(page.locator('#name'), name);
+    await this.fill(page.locator('#email'), email);
+    await this.click(this.submitButton);
+  }
+
+  async getConfirmationMessage(): Promise<string> {
+    return this.getText(this.confirmationMessage);
+  }
+}
+```
+
+> `BasePage` already provides `click()`, `fill()`, `getText()` and `isVisible()` — use them instead of calling Playwright directly so waits are handled consistently.
+
+### Step 2 — Write the feature file
+
+Create `features/landing/booking.feature`. Use `Background` for shared preconditions and `Scenario Outline` + `Examples` when the same flow needs to run with multiple data sets:
+
+```gherkin
+Feature: Booking
+  As a visitor
+  I want to submit a booking request
+  So that I can reserve a room
+
+  Background:
+    Given I am on the booking section
+
+  @smoke
+  Scenario: Successful booking submission
+    When I submit a booking with name "John" and email "john@example.com"
+    Then I should see the confirmation message "Booking Successful!"
+
+  Scenario Outline: Booking validation
+    When I submit a booking with name "<name>" and email "<email>"
+    Then I should see the confirmation message "<message>"
+
+    Examples:
+      | name | email        | message                  |
+      |      | a@example.com | Name is required         |
+      | John |               | Email is required        |
+```
+
+### Step 3 — Write the step definitions
+
+Create `steps/landing/booking.steps.ts`. Each step receives the `page` fixture from Playwright and translates Gherkin sentences into Page Object calls:
+
+```typescript
+import { expect } from '@playwright/test';
+import { createBdd } from 'playwright-bdd';
+import { BookingPage } from '../../pages/landing/BookingPage';
+
+const { Given, When, Then } = createBdd();
+
+Given('I am on the booking section', async ({ page }) => {
+  const bookingPage = new BookingPage(page);
+  await bookingPage.open();
+});
+
+When('I submit a booking with name {string} and email {string}', async ({ page }, name: string, email: string) => {
+  const bookingPage = new BookingPage(page);
+  await bookingPage.submitBooking(name, email);
+});
+
+Then('I should see the confirmation message {string}', async ({ page }, expected: string) => {
+  const bookingPage = new BookingPage(page);
+  expect(await bookingPage.getConfirmationMessage()).toBe(expected);
+});
+```
+
+> Step text parameters map to TypeScript arguments in order. `{string}` matches a double-quoted value in the Gherkin sentence.
+
+### Step 4 — Run the new test
+
+```bash
+npm test
+# or target just the new feature
+npx bddgen && npx playwright test --grep "Booking"
+```
+
+`bddgen` compiles your `.feature` + `.steps.ts` files into runnable specs under `.features-gen/` before Playwright executes them. `npm test` does this automatically via the `pretest` hook.
+
+---
 
 ## Conventions
 
-- **Page Objects** (`pages/`): encapsulate locators and page interactions; they don't contain business assertions.
-- **Steps** (`steps/<module>/*.steps.ts`): translate Gherkin into Page Object calls and contain the assertions (`expect`), defined with `createBdd()` from `playwright-bdd`. Each step receives Playwright's own fixtures (`{ page }`, `{ context }`, ...) instead of a Cucumber `World`.
-- **Fixtures** (`fixtures/*.json`): test data (users, expected messages, etc.) imported by the steps.
-- Each business module (login, dashboard, timesheet, ...) has a mirrored folder under `features/<module>/` and `steps/<module>/`.
-- `npm test` runs `bddgen`, which compiles `features/**/*.feature` + `steps/**/*.steps.ts` into runnable specs under `.features-gen/` (git-ignored); Playwright then executes those specs directly.
+- **Page Objects** (`pages/`): encapsulate locators and interactions only — no assertions.
+- **Steps** (`steps/`): translate Gherkin into Page Object calls and hold the `expect` assertions.
+- **Features** (`features/`): written in plain Gherkin, readable by non-technical stakeholders.
+- Folder structure mirrors across all three layers: `features/admin/login/` → `steps/admin/login/` → `pages/admin/`.
+- Steps are shared across features automatically — if a step is already defined, reuse it rather than rewriting it.
 
 ## Workers / parallel execution
 
-`playwright.config.ts` sets `fullyParallel: true`, so every scenario runs in its own isolated worker process. The worker count is:
+`playwright.config.ts` sets `fullyParallel: true`, so every scenario runs in its own isolated worker. Worker count:
 
-- the `WORKERS` env var if set (e.g. `WORKERS=4 npm test`),
-- otherwise `2` when `CI` is set,
-- otherwise Playwright's default (based on available CPU cores).
-
-You can also override it ad hoc: `npx playwright test --workers=4`.
+- `WORKERS` env var if set (e.g. `WORKERS=4 npm test`)
+- `2` when `CI=true` (set automatically by GitHub Actions)
+- Playwright default (half the available CPU cores) otherwise
 
 ## Reports
 
-Playwright's built-in HTML reporter is used (`playwright.config.ts` → `reporter: [['html', ...], ['list']]`). After a run, open the report with:
+Each `npm test` run generates two reports:
+
+| Report | Path | Purpose |
+| --- | --- | --- |
+| Playwright HTML | `playwright-report/index.html` | Debug: traces, screenshots, timeline per step |
+| Cucumber HTML | `cucumber-report/index.html` | Client-facing: scenarios in plain Gherkin, green/red per step |
 
 ```bash
-npm run test:report
+npm run test:report   # open Playwright report
+# open cucumber-report/index.html manually in your browser
 ```
 
-Failure screenshots, traces (`retain-on-failure`) and videos (if `VIDEO=true`) are attached automatically to each failed test in the report.
+Screenshots are captured for every scenario. Videos are captured on failure by default; set `VIDEO=true` to record all runs.
+
+In CI (GitHub Actions), both reports are uploaded as artifacts after each run and kept for 30 days.
 
 ## Code quality and Git conventions
 
-The project uses **ESLint** + **Prettier** for the code and **Husky** to enforce Git conventions via git hooks.
-
 ```bash
-npm run lint          # eslint
-npm run lint:fix       # eslint --fix
-npm run format          # prettier --write
-npm run format:check     # prettier --check
+npm run lint          # run ESLint
+npm run lint:fix      # run ESLint with auto-fix
+npm run format        # run Prettier
+npm run format:check  # check Prettier without writing
 ```
 
 ### Branch names
-
-Every commit (except on `main`, `master`, `develop`, `dev`, `staging`) must be made from a branch following this pattern:
 
 ```
 <type>/<kebab-case-description>
 ```
 
-Valid types: `feat`, `fix`, `chore`.
-
-Examples: `feat/login-page`, `fix/navbar-overlap`, `chore/update-dependencies`.
-
-Validation runs in the `pre-commit` hook (`scripts/validate-branch-name.js`).
+Valid types: `feat`, `fix`, `chore`. Examples: `feat/booking-tests`, `fix/login-selector`, `chore/update-deps`.
 
 ### Commit messages (Conventional Commits)
-
-Commit messages are validated with **commitlint** (config in the `commitlint` field of `package.json`, `commit-msg` hook) following [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 <type>(<optional scope>): <description>
 ```
 
-Valid examples: `feat: add login page`, `fix(dashboard): correct welcome banner selector`, `test: add smoke tag to login scenario`.
+Examples: `feat: add booking page tests`, `fix(login): update password selector`, `test: add smoke tag to dashboard`.
 
-### Pre-commit
+### Pre-commit hook
 
-Before each commit, `lint-staged` runs `eslint --fix` and `prettier --write` only on the staged files (configured in `package.json`).
+`lint-staged` runs `eslint --fix` and `prettier --write` on staged files before every commit.
