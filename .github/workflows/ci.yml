@@ -28,3 +28,40 @@ jobs:
 
       - name: Run Prettier check
         run: npm run format:check
+
+  e2e-tests:
+    name: Cucumber & Playwright
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: https://automationintesting.online/
+      BROWSER: chromium
+      HEADLESS: 'true'
+      SLOWMO: '0'
+      TIMEOUT: '30000'
+      VIDEO: 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: reports/
+          retention-days: 7

@@ -1,5 +1,6 @@
 import {
   setWorldConstructor,
+  setDefaultTimeout,
   World,
   IWorldOptions,
   Before,
@@ -24,6 +25,7 @@ export class CustomWorld extends World {
 }
 
 setWorldConstructor(CustomWorld);
+setDefaultTimeout(defaultTimeout);
 
 let browser: Browser;
 
@@ -36,6 +38,7 @@ Before(async function (this: CustomWorld) {
   this.browser = browser;
   this.context = await browser.newContext(contextOptions);
   this.context.setDefaultTimeout(defaultTimeout);
+  await this.context.tracing.start({ screenshots: true, snapshots: true, sources: true });
   this.page = await this.context.newPage();
 });
 
@@ -47,6 +50,13 @@ After(async function (this: CustomWorld, { result, pickle }) {
     const screenshot = await this.page.screenshot({ path: screenshotPath });
     await this.attach(screenshot, 'image/png');
   }
+
+  const tracesDir = path.join('reports', 'traces');
+  fs.mkdirSync(tracesDir, { recursive: true });
+  const traceStatus = result?.status === Status.FAILED ? 'failed' : 'passed';
+  const tracePath = path.join(tracesDir, `${pickle.name.replace(/\s+/g, '_')}_${traceStatus}_${Date.now()}.zip`);
+  await this.context.tracing.stop({ path: tracePath });
+
   await this.context.close();
 });
 

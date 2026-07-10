@@ -1,15 +1,8 @@
-const common = [
-  'features/**/*.feature',
-  '--require-module ts-node/register',
-  '--require-module tsconfig-paths/register',
-  '--require support/**/*.ts',
-  '--require steps/**/*.steps.ts',
-  '--format progress',
-  '--format json:reports/cucumber-report.json',
-  '--format html:reports/cucumber-report.html',
-  '--publish-quiet',
-].join(' ');
-
 module.exports = {
-  default: common,
+  default: {
+    paths: ['features/**/*.feature'],
+    requireModule: ['ts-node/register', 'tsconfig-paths/register'],
+    require: ['support/**/*.ts', 'steps/**/*.steps.ts'],
+    format: ['progress', 'json:reports/cucumber-report.json', 'html:reports/cucumber-report.html'],
+  },
 };

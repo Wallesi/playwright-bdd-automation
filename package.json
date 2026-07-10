@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "test": "cucumber-js",
+    "test:headed": "cross-env HEADLESS=false SLOWMO=250 cucumber-js",
     "test:tags": "cucumber-js --tags",
     "test:report": "npm run test; npm run report:generate",
     "report:generate": "node utils/reportGenerator.js",
@@ -23,6 +24,40 @@
   ],
   "author": "",
   "license": "ISC",
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "printWidth": 120,
+    "trailingComma": "all",
+    "tabWidth": 2
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "type-enum": [
+        2,
+        "always",
+        [
+          "feat",
+          "fix",
+          "docs",
+          "style",
+          "refactor",
+          "perf",
+          "test",
+          "build",
+          "ci",
+          "chore",
+          "revert"
+        ]
+      ],
+      "subject-case": [
+        0
+      ]
+    }
+  },
   "lint-staged": {
     "*.ts": [
       "eslint --fix",
