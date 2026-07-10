@@ -13,4 +13,4 @@ Feature: Login
 
   Scenario: Failed login with invalid credentials
     When I log in with invalid credentials
-    Then I should see an error message "Invalid username or password"
+    Then I should see an error message "Invalid credentials"

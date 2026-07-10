@@ -1,7 +1,9 @@
 node_modules/
 dist/
-reports/
-.env
 *.log
+.features-gen/
 playwright-report/
 test-results/
+cucumber-report/
+playwright-report/
+.env
