@@ -2,7 +2,7 @@ const tseslint = require('typescript-eslint');
 
 module.exports = tseslint.config(
   {
-    ignores: ['node_modules/**', 'dist/**', 'reports/**'],
+    ignores: ['node_modules/**', 'dist/**', '.features-gen/**', 'playwright-report/**', 'test-results/**'],
   },
   {
     files: ['**/*.ts'],

@@ -1,6 +1,6 @@
 # Playwright Automation Framework
 
-End-to-end automation framework using **Playwright** + **Cucumber (BDD)** + **Page Object Model**, written in TypeScript.
+End-to-end automation framework using **Playwright** + **playwright-bdd (Gherkin/Cucumber syntax)** + **Page Object Model**, written in TypeScript.
 
 ## Folder structure
 
@@ -22,15 +22,13 @@ End-to-end automation framework using **Playwright** + **Cucumber (BDD)** + **Pa
 │   └── DashboardPage.ts
 ├── utils/                  # Reusable helpers
 │   ├── commonUtils.ts
-│   ├── dateUtils.ts
-│   └── reportGenerator.js
+│   └── dateUtils.ts
 ├── fixtures/                 # Test data
 │   └── testData.json
-├── support/                  # Cucumber World and hooks (browser lifecycle)
-│   └── testSetup.ts
-├── reports/                  # Report output (generated, git-ignored)
-├── cucumber.js               # Cucumber test runner configuration
-├── playwright.config.ts      # Browser/context options read by support/testSetup.ts
+├── .features-gen/             # Playwright specs generated from .feature files (git-ignored)
+├── playwright-report/         # Playwright HTML report (generated, git-ignored)
+├── test-results/              # Traces/screenshots/videos per test (generated, git-ignored)
+├── playwright.config.ts      # Playwright config: BDD generation, browser/context options, workers, reporter
 └── tsconfig.json
 ```
 
@@ -46,15 +44,17 @@ npm install
 npx playwright install
 ```
 
-Copy `.env.example` to `.env` and adjust the values for your environment.
+Environment config lives directly in the versioned [`.env`](.env) file at the project root — adjust the values there for your environment (no secrets are stored in it, only run configuration).
 
 ## Running the tests
 
 ```bash
-npm test                     # run all .feature files
+npm test                       # generate specs from .feature files and run them
 npm run test:tags -- "@smoke"  # run only scenarios tagged @smoke
-npm run test:report          # run the tests and generate the HTML report
+npm run test:report            # open the last generated HTML report
 ```
+
+Tests run in parallel across multiple workers by default (see [Workers / parallel execution](#workers--parallel-execution)). You can also call Playwright's CLI directly for more control, e.g. `npx playwright test --project=chromium` or `npx playwright test --grep "@smoke"`.
 
 Relevant environment variables (see `playwright.config.ts`):
 
@@ -64,20 +64,37 @@ Relevant environment variables (see `playwright.config.ts`):
 | `BROWSER`  | `chromium` \| `firefox` \| `webkit`    | `chromium`            |
 | `HEADLESS` | `true` \| `false`                      | `true`                |
 | `SLOWMO`   | Delay in ms between actions (debug)    | `0`                   |
-| `TIMEOUT`  | Default timeout in ms                  | `30000`               |
+| `TIMEOUT`  | Default action timeout in ms           | `30000`               |
 | `VIDEO`    | Record a video of each scenario        | `false`               |
+| `WORKERS`  | Number of parallel workers (see below) | auto (or `2` on CI)   |
 
 ## Conventions
 
 - **Page Objects** (`pages/`): encapsulate locators and page interactions; they don't contain business assertions.
-- **Steps** (`steps/<module>/*.steps.ts`): translate Gherkin into Page Object calls and contain the assertions (`expect`).
-- **World** (`support/testSetup.ts`): exposes `this.page` / `this.context` / `this.browser` to each step via `CustomWorld`.
+- **Steps** (`steps/<module>/*.steps.ts`): translate Gherkin into Page Object calls and contain the assertions (`expect`), defined with `createBdd()` from `playwright-bdd`. Each step receives Playwright's own fixtures (`{ page }`, `{ context }`, ...) instead of a Cucumber `World`.
 - **Fixtures** (`fixtures/*.json`): test data (users, expected messages, etc.) imported by the steps.
 - Each business module (login, dashboard, timesheet, ...) has a mirrored folder under `features/<module>/` and `steps/<module>/`.
+- `npm test` runs `bddgen`, which compiles `features/**/*.feature` + `steps/**/*.steps.ts` into runnable specs under `.features-gen/` (git-ignored); Playwright then executes those specs directly.
+
+## Workers / parallel execution
+
+`playwright.config.ts` sets `fullyParallel: true`, so every scenario runs in its own isolated worker process. The worker count is:
+
+- the `WORKERS` env var if set (e.g. `WORKERS=4 npm test`),
+- otherwise `2` when `CI` is set,
+- otherwise Playwright's default (based on available CPU cores).
+
+You can also override it ad hoc: `npx playwright test --workers=4`.
 
 ## Reports
 
-`npm run test:report` generates an enriched HTML report at `reports/html-report` using `multiple-cucumber-html-reporter`, in addition to Cucumber's raw JSON/HTML report in `reports/`.
+Playwright's built-in HTML reporter is used (`playwright.config.ts` → `reporter: [['html', ...], ['list']]`). After a run, open the report with:
+
+```bash
+npm run test:report
+```
+
+Failure screenshots, traces (`retain-on-failure`) and videos (if `VIDEO=true`) are attached automatically to each failed test in the report.
 
 ## Code quality and Git conventions
 
@@ -106,7 +123,7 @@ Validation runs in the `pre-commit` hook (`scripts/validate-branch-name.js`).
 
 ### Commit messages (Conventional Commits)
 
-Commit messages are validated with **commitlint** (`commitlint.config.js`, `commit-msg` hook) following [Conventional Commits](https://www.conventionalcommits.org/):
+Commit messages are validated with **commitlint** (config in the `commitlint` field of `package.json`, `commit-msg` hook) following [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 <type>(<optional scope>): <description>

@@ -22,6 +22,6 @@
       "@support/*": ["support/*"]
     }
   },
-  "include": ["steps/**/*.ts", "pages/**/*.ts", "utils/**/*.ts", "support/**/*.ts"],
-  "exclude": ["node_modules", "dist", "reports"]
+  "include": ["steps/**/*.ts", "pages/**/*.ts", "utils/**/*.ts", "playwright.config.ts"],
+  "exclude": ["node_modules", "dist", ".features-gen", "playwright-report", "test-results"]
 }
