@@ -13,6 +13,7 @@ npm test 2>&1
 ### Step 1 — Identify the failure
 
 Look for:
+
 - The failing feature file path
 - The exact step that failed
 - The full error message and stack trace
@@ -20,6 +21,7 @@ Look for:
 ### Step 2 — Read the relevant files
 
 For the failing test, read:
+
 1. The `.feature` file
 2. The step definitions file (`steps/.../*.steps.ts`)
 3. The page object file (`pages/.../*.ts`)
@@ -35,14 +37,11 @@ node scripts/inspect-page.mjs https://automationintesting.online/<failing-path>
 ```
 
 The script outputs a `locators` array per element, already sorted by Playwright's recommended priority:
+
 ```json
 {
   "tag": "button",
-  "locators": [
-    "getByRole('button', { name: 'Sign in' })",
-    "getByTestId('login-btn')",
-    "locator('#doLogin')"
-  ]
+  "locators": ["getByRole('button', { name: 'Sign in' })", "getByTestId('login-btn')", "locator('#doLogin')"]
 }
 ```
 
@@ -53,6 +52,7 @@ Take the top 3 entries from the matching element's `locators` array for the fix 
 ### Step 4 — Diagnose the root cause
 
 Common causes:
+
 - **Locator broken**: selector changed → replace the broken locator in the page object with `this.robustLocator()` using the top 3 entries from the script output, prefixed with `this.page.`:
   ```ts
   // Before (fragile)

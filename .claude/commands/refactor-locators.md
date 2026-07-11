@@ -57,6 +57,7 @@ this.loginButton = this.robustLocator(
 ```
 
 **Rules:**
+
 - Use Playwright's priority: `getByRole` > `getByLabel` > `getByPlaceholder` > `getByTestId` > `locator`
 - Always keep the original selector as the last fallback in the chain
 - If the script returns fewer than 3 options for an element, use however many are available
@@ -80,7 +81,7 @@ If any test fails after the refactor, read the error and revert only the locator
 
 Print a summary table:
 
-| File | Locators refactored | Locators skipped (reason) |
-|---|---|---|
-| pages/admin/LoginPage.ts | 3 | 0 |
-| pages/landing/LandingPage.ts | 2 | 1 (element not found in script output) |
+| File                         | Locators refactored | Locators skipped (reason)              |
+| ---------------------------- | ------------------- | -------------------------------------- |
+| pages/admin/LoginPage.ts     | 3                   | 0                                      |
+| pages/landing/LandingPage.ts | 2                   | 1 (element not found in script output) |
