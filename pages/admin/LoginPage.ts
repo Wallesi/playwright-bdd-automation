@@ -19,18 +19,17 @@ export class LoginPage extends BasePage {
       page.getByPlaceholder('Password'),
       page.locator('#password'),
     );
-    this.loginButton = this.robustLocator(
-      page.getByRole('button', { name: 'Login' }),
-      page.locator('#doLogin'),
-    );
-    this.errorMessage = this.robustLocator(
-      page.locator('.alert-danger'),
-      page.locator('[role="alert"].alert-danger'),
-    );
+    this.loginButton = this.robustLocator(page.getByRole('button', { name: 'Login' }), page.locator('#doLogin'));
+    this.errorMessage = this.robustLocator(page.locator('.alert-danger'), page.locator('[role="alert"].alert-danger'));
+  }
+
+  async isLoaded(): Promise<void> {
+    await this.waitForVisible(this.usernameInput);
   }
 
   async open(): Promise<void> {
     await this.goto('/admin');
+    await this.isLoaded();
   }
 
   async login(username: string, password: string): Promise<void> {

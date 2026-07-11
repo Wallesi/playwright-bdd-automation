@@ -8,10 +8,7 @@ export class DashboardPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.navbar = this.robustLocator(
-      page.getByRole('navigation'),
-      page.locator('nav.navbar'),
-    );
+    this.navbar = this.robustLocator(page.getByRole('navigation'), page.locator('nav.navbar'));
     this.logoutButton = page.getByRole('button', { name: 'Logout' });
     this.navLinks = {
       Rooms: this.robustLocator(
@@ -19,14 +16,8 @@ export class DashboardPage extends BasePage {
         page.locator('a[href="/admin/rooms"]'),
         page.locator('a.nav-link[href="/admin/rooms"]'),
       ),
-      Report: this.robustLocator(
-        page.getByRole('link', { name: 'Report' }),
-        page.locator('#reportLink'),
-      ),
-      Branding: this.robustLocator(
-        page.getByRole('link', { name: 'Branding' }),
-        page.locator('#brandingLink'),
-      ),
+      Report: this.robustLocator(page.getByRole('link', { name: 'Report' }), page.locator('#reportLink')),
+      Branding: this.robustLocator(page.getByRole('link', { name: 'Branding' }), page.locator('#brandingLink')),
       Messages: this.robustLocator(
         page.getByRole('link', { name: /Messages/ }),
         page.locator('a[href="/admin/message"]'),
@@ -35,8 +26,8 @@ export class DashboardPage extends BasePage {
     };
   }
 
-  async isLoaded(): Promise<boolean> {
-    return this.isVisible(this.navbar);
+  async isLoaded(): Promise<void> {
+    await this.waitForVisible(this.navbar);
   }
 
   async clickNavLink(section: string): Promise<void> {

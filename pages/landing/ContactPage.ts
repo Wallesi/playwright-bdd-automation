@@ -33,13 +33,14 @@ export class ContactPage extends BasePage {
       page.getByTestId('ContactSubject'),
       page.locator('#subject'),
     );
-    this.descriptionInput = this.robustLocator(
-      page.getByTestId('ContactDescription'),
-      page.locator('#description'),
-    );
+    this.descriptionInput = this.robustLocator(page.getByTestId('ContactDescription'), page.locator('#description'));
     this.submitButton = page.getByRole('button', { name: 'Submit' });
     this.errorAlert = page.locator('.alert.alert-danger');
     this.successHeading = page.locator('h3.h4', { hasText: 'Thanks for getting in touch' });
+  }
+
+  async isLoaded(): Promise<void> {
+    await this.waitForVisible(this.submitButton);
   }
 
   async fillField(field: string, value: string): Promise<void> {

@@ -7,11 +7,12 @@ export class RoomDetailsPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.roomTitle = this.robustLocator(
-      page.getByRole('heading', { level: 1 }),
-      page.locator('h1.fw-bold'),
-    );
+    this.roomTitle = this.robustLocator(page.getByRole('heading', { level: 1 }), page.locator('h1.fw-bold'));
     this.roomPrice = page.locator('span.fs-2.fw-bold.text-primary');
+  }
+
+  async isLoaded(): Promise<void> {
+    await this.waitForVisible(this.roomTitle);
   }
 
   getSectionHeading(section: string): Locator {
