@@ -6,6 +6,7 @@
   "scripts": {
     "pretest": "rimraf .features-gen playwright-report test-results cucumber-report",
     "test": "bddgen && playwright test",
+    "test:headed": "bddgen && playwright test --headed",
     "test:tags": "bddgen && playwright test --grep",
     "test:ui": "bddgen && playwright test --ui",
     "test:report": "playwright show-report",
