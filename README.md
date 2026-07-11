@@ -250,3 +250,81 @@ Examples: `feat: add booking page tests`, `fix(login): update password selector`
 ### Pre-commit hook
 
 `lint-staged` runs `eslint --fix` and `prettier --write` on staged files before every commit.
+
+---
+
+## Claude Code skills
+
+This project ships four slash commands for [Claude Code](https://claude.ai/code) that automate the most repetitive QA tasks. Each command is defined in `.claude/commands/` and is invoked from within a Claude Code session.
+
+### `/create-test <description>`
+
+Generates all three files needed for a new test (feature, page object, and step definitions) from a plain-language description.
+
+**What it does:**
+
+1. Inspects the live page with `scripts/inspect-page.mjs` to discover semantic locators.
+2. Reads existing project conventions (`BasePage`, `LoginPage`, etc.) to match the code style.
+3. Creates `features/<area>/<name>.feature`, `pages/<area>/<Name>Page.ts`, and `steps/<area>/<name>/<name>.steps.ts`.
+
+**Example:**
+
+```
+/create-test room booking form on the landing page — happy path and validation errors
+```
+
+---
+
+### `/fix-test [file-path-or-error]`
+
+Diagnoses and fixes a failing test. Pass a file path or error message, or run it without arguments to let it discover failures on its own.
+
+**What it does:**
+
+1. Runs `npm test` (if no argument given) and identifies the failing step.
+2. Reads the feature file, step definitions, and page object.
+3. Inspects the live page only when the error is locator-related.
+4. Applies the minimal fix (broken locator, mismatched step text, missing `await`, wrong assertion, or bad test data) and re-runs the suite to verify.
+
+**Example:**
+
+```
+/fix-test steps/landingPage/roomBooking/roomBooking.steps.ts
+```
+
+---
+
+### `/generate-test-cases <input>`
+
+Generates Gherkin scenarios from a Jira ticket or a natural-language description. **Output only — no files are written.** Review the output, then run `/create-test` to implement it.
+
+**What it does:**
+
+1. Extracts the user story, acceptance criteria, and edge cases from the input.
+2. Matches the existing feature file style.
+3. Outputs the complete `.feature` content plus a traceability table mapping each AC to its scenario(s).
+
+**Example:**
+
+```
+/generate-test-cases As a guest I want to contact the hotel so that I can ask questions before booking. Required fields: name, email, message. Show success banner on submit.
+```
+
+---
+
+### `/refactor-locators [file-path]`
+
+Upgrades fragile `page.locator('#id')` calls to `robustLocator()` chains that follow Playwright's recommended priority. Pass a specific file path or run without arguments to refactor all page objects.
+
+**What it does:**
+
+1. Scans `pages/` for any `this.page.locator(` call not already wrapped in `this.robustLocator()`.
+2. Runs `scripts/inspect-page.mjs` against the page URL to get semantic alternatives.
+3. Replaces each single locator with a `robustLocator()` chain (up to 3 options, ordered `getByRole` → `getByLabel` → `getByPlaceholder` → `getByTestId` → `locator`).
+4. Runs `npm test` after refactoring and reverts any locator that causes a regression.
+
+**Example:**
+
+```
+/refactor-locators pages/landing/LandingPage.ts
+```
