@@ -9,10 +9,24 @@ export class LoginPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.usernameInput = page.locator('#username');
-    this.passwordInput = page.locator('#password');
-    this.loginButton = page.locator('#doLogin');
-    this.errorMessage = page.locator('[role="alert"].alert-danger');
+    this.usernameInput = this.robustLocator(
+      page.getByLabel('Username'),
+      page.getByPlaceholder('Enter username'),
+      page.locator('#username'),
+    );
+    this.passwordInput = this.robustLocator(
+      page.getByLabel('Password'),
+      page.getByPlaceholder('Password'),
+      page.locator('#password'),
+    );
+    this.loginButton = this.robustLocator(
+      page.getByRole('button', { name: 'Login' }),
+      page.locator('#doLogin'),
+    );
+    this.errorMessage = this.robustLocator(
+      page.locator('.alert-danger'),
+      page.locator('[role="alert"].alert-danger'),
+    );
   }
 
   async open(): Promise<void> {

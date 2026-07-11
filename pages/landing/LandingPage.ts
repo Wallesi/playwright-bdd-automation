@@ -7,8 +7,14 @@ export class LandingPage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.navLinks = {
-      Rooms: page.locator('a.nav-link[href="/#rooms"]'),
-      Location: page.locator('a.nav-link[href="/#location"]'),
+      Rooms: this.robustLocator(
+        page.locator('a[href="/#rooms"]'),
+        page.locator('a.nav-link[href="/#rooms"]'),
+      ),
+      Location: this.robustLocator(
+        page.locator('a[href="/#location"]'),
+        page.locator('a.nav-link[href="/#location"]'),
+      ),
     };
   }
 
@@ -24,5 +30,15 @@ export class LandingPage extends BasePage {
 
   getSectionHeading(heading: string): Locator {
     return this.page.locator('h2.display-5', { hasText: heading });
+  }
+
+  private getRoomCard(room: string): Locator {
+    return this.page
+      .locator('.room-card')
+      .filter({ has: this.page.locator('h5.card-title', { hasText: new RegExp(`^${room}$`) }) });
+  }
+
+  async clickBookNow(room: string): Promise<void> {
+    await this.click(this.getRoomCard(room).getByRole('link', { name: 'Book now' }));
   }
 }

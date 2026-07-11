@@ -37,4 +37,10 @@ export class BasePage {
   get title(): Promise<string> {
     return this.page.title();
   }
+
+  // Tries each locator in order — first match wins. Follows Playwright's recommended
+  // priority: getByRole > getByLabel > getByPlaceholder > getByTestId > locator('#id')
+  protected robustLocator(...locators: [Locator, ...Locator[]]): Locator {
+    return locators.reduce((acc, loc) => acc.or(loc));
+  }
 }
