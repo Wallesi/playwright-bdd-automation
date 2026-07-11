@@ -26,8 +26,9 @@ export class DashboardPage extends BasePage {
     };
   }
 
-  async isLoaded(): Promise<void> {
+  async isLoaded(): Promise<boolean> {
     await this.waitForVisible(this.navbar);
+    return true;
   }
 
   async clickNavLink(section: string): Promise<void> {
