@@ -33,7 +33,7 @@ export default defineConfig({
     viewport: { width: 1366, height: 768 },
     ignoreHTTPSErrors: true,
     actionTimeout: process.env.TIMEOUT ? Number(process.env.TIMEOUT) : 30000,
-    trace: 'retain-on-failure',
+    trace: 'on',
     screenshot: 'on',
     video: process.env.VIDEO === 'true' ? 'on' : 'retain-on-failure',
     launchOptions: {

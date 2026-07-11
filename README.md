@@ -53,15 +53,22 @@ npm install
 npx playwright install
 ```
 
-Create a `.env` file at the project root (see environment variables below). No secrets are stored — only run configuration.
+```bash
+cp .env.example .env
+```
+
+`dotenv` only reads a file literally named `.env`, so `.env.example` **must be renamed/copied to `.env`** (dropping the `.example` suffix) — just having `.env.example` in the folder has no effect. On Windows without `cp`, rename the file manually or run `copy .env.example .env`.
+
+`.env.example` already points `BASE_URL` at the live demo site (`https://automationintesting.online`), so once copied it works out of the box. No secrets are stored in it — only run configuration (see variables below).
 
 ## Running the tests
 
 ```bash
-npm test                       # generate specs from .feature files and run all tests
-npm run test:ui                # open Playwright UI mode to run tests interactively
-npm run test:tags -- "@smoke"  # run only scenarios tagged @smoke
-npm run test:report            # open the last Playwright HTML report
+npm test                                    # generate specs from .feature files and run all tests
+npm run test:headed -- --grep "scenario"    # run a single scenario with the browser visible
+npm run test:ui                             # open Playwright UI mode to run tests interactively
+npm run test:tags -- "@smoke"               # run only scenarios tagged @smoke
+npm run test:report                         # open the last Playwright HTML report
 ```
 
 Relevant environment variables:
@@ -196,6 +203,15 @@ npx bddgen && npx playwright test --grep "Booking"
 - Folder structure mirrors across all three layers: `features/admin/login/` → `steps/admin/login/` → `pages/admin/`.
 - Steps are shared across features automatically — if a step is already defined, reuse it rather than rewriting it.
 
+## How playwright-bdd works
+
+Unlike plain Cucumber.js, `playwright-bdd` doesn't execute Gherkin scenarios with its own test runner. `defineBddConfig()` (in `playwright.config.ts`) plus the `bddgen` CLI **compile every `.feature` file together with its matching `.steps.ts`** into a real Playwright test file under `.features-gen/` — one native `test()` per scenario, built on the standard Playwright `test` fixture. `npm test` runs `bddgen` first, then simply hands those generated specs to `playwright test`, exactly as if they had been written by hand.
+
+Because each scenario ends up as a genuine Playwright test instead of living inside a separate Cucumber process, this project gets two capabilities "for free" that a plain Cucumber.js setup would not have:
+
+- **Two reporters from a single run** — since Playwright's own test runner executes every scenario, its built-in `html` reporter works unmodified (trace/screenshot/video per test, see [Reports](#reports)). `playwright-bdd/reporter/cucumber` is just a second entry in the same `reporter: [...]` array in `playwright.config.ts`: it listens to those same results and re-renders them as a Gherkin-style Cucumber HTML report. Both are produced by one `npm test` — there's no need to run the suite twice or reconcile two separate result sets.
+- **Playwright's native worker parallelism** — `fullyParallel` and `WORKERS` (see below) behave exactly as they would for hand-written specs, because each scenario is its own spec/test that Playwright's scheduler can freely distribute across workers. A traditional Cucumber runner drives scenarios through its own process/worker model, so that parallelism would have to be reimplemented through Cucumber's own mechanisms instead of Playwright's.
+
 ## Workers / parallel execution
 
 `playwright.config.ts` sets `fullyParallel: true`, so every scenario runs in its own isolated worker. Worker count:
@@ -206,19 +222,39 @@ npx bddgen && npx playwright test --grep "Booking"
 
 ## Reports
 
-Each `npm test` run generates two reports:
+Each `npm test` run generates two reports — both made possible by the compilation step described in [How playwright-bdd works](#how-playwright-bdd-works):
 
-| Report          | Path                           | Purpose                                                       |
-| --------------- | ------------------------------ | ------------------------------------------------------------- |
-| Playwright HTML | `playwright-report/index.html` | Debug: traces, screenshots, timeline per step                 |
-| Cucumber HTML   | `cucumber-report/index.html`   | Client-facing: scenarios in plain Gherkin, green/red per step |
+### Playwright HTML report
+
+Path: `playwright-report/index.html`
+
+Technical, debug-oriented report. Lists every spec with its steps, and for each one gives access to the **trace** (full timeline with DOM snapshots, network, console and actions), screenshots and video. This is the report you reach for when a test fails and you need to see exactly what the browser did.
 
 ```bash
-npm run test:report   # open Playwright report
+npm run test:report   # opens the last Playwright HTML report in your browser
+```
+
+From within that report, click the trace icon next to any test to open the trace viewer inline. You can also open a trace file directly, without going through the report:
+
+```bash
+npx playwright show-trace test-results/<test-folder>/trace.zip
+```
+
+### Cucumber HTML report
+
+Path: `cucumber-report/index.html`
+
+Client-facing report: shows scenarios in plain Gherkin (`Given/When/Then`), with green/red per step. No trace/network detail — it's meant to be shared with non-technical stakeholders to confirm what was tested and what passed or failed.
+
+```bash
 # open cucumber-report/index.html manually in your browser
 ```
 
-Screenshots are captured for every scenario. Videos are captured on failure by default; set `VIDEO=true` to record all runs.
+### Traces, screenshots and videos
+
+- `trace: 'on'` — a trace is recorded for **every** test, pass or fail, so you can always inspect a run afterwards. Traces are saved under `test-results/<test-folder>/trace.zip` and are also reachable from the Playwright HTML report.
+- Screenshots are captured for every scenario.
+- Videos are captured on failure by default; set `VIDEO=true` to record all runs.
 
 In CI (GitHub Actions), both reports are uploaded as artifacts after each run and kept for 30 days.
 
