@@ -6,4 +6,5 @@ playwright-report/
 test-results/
 cucumber-report/
 playwright-report/
+tmp/
 .env
