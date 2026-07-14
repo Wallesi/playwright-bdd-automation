@@ -289,78 +289,74 @@ Examples: `feat: add booking page tests`, `fix(login): update password selector`
 
 ---
 
-## Claude Code skills
+## Claude Code agents
 
-This project ships four slash commands for [Claude Code](https://claude.ai/code) that automate the most repetitive QA tasks. Each command is defined in `.claude/commands/` and is invoked from within a Claude Code session.
+This project ships three [Claude Code](https://claude.ai/code) subagents, defined in `.claude/agents/`, plus a shared skill (`.claude/skills/playwright-bdd/SKILL.md`) that documents the project's conventions, ISTQB-aligned test design techniques, SOLID applied to test code, and known anti-patterns — all three agents load it instead of duplicating that knowledge. Unlike slash commands, subagents aren't invoked with a `/command` — you ask Claude Code to use them by name (or Claude picks them up automatically when your request matches their description), and each one runs in its own isolated context with a restricted tool set (declared in its frontmatter).
 
-### `/create-test <description>`
+| Agent | Responsibility | Never does |
+|---|---|---|
+| `qa` | Designs the `.feature` (Gherkin), one design technique per scenario | Write code, touch selectors, run tests |
+| `qa-automation` | Implements / fixes / refactors Page Objects + steps | Redesign the `.feature`, `git commit` |
+| `qa-explorer` | Explores the site with no pre-written script, reports findings | Write test code, confirm destructive actions without being asked |
 
-Generates all three files needed for a new test (feature, page object, and step definitions) from a plain-language description.
+### `qa` — Gherkin design (no code)
+
+Designs a `.feature` file from a plain-language description, a Jira ticket, or an acceptance-criteria list. Writes only the `.feature` file — never step definitions, page objects, or TypeScript.
 
 **What it does:**
 
-1. Inspects the live page with `scripts/inspect-page.mjs` to discover semantic locators.
-2. Reads existing project conventions (`BasePage`, `LoginPage`, etc.) to match the code style.
-3. Creates `features/<area>/<name>.feature`, `pages/<area>/<Name>Page.ts`, and `steps/<area>/<name>/<name>.steps.ts`.
+1. Reads an existing `.feature` from the same area to match style, and greps `steps/**/*.steps.ts` to maximize step reuse.
+2. Writes `features/<area>/<name>/<name>.feature` (or `features/<area>/<name>.feature` for simple flows).
+3. Reports a step-reuse table and, if the input was a ticket, an AC-to-scenario traceability table.
 
-**Example:**
+**Example prompt:**
 
 ```
-/create-test room booking form on the landing page — happy path and validation errors
+Use the qa agent to design a Gherkin feature for the room booking form on the landing page — happy path and validation errors.
 ```
 
 ---
 
-### `/fix-test [file-path-or-error]`
+### `qa-automation` — implementation, fix, and locator refactor
 
-Diagnoses and fixes a failing test. Pass a file path or error message, or run it without arguments to let it discover failures on its own.
+Implementation-only counterpart to `qa`. Operates in one of three modes depending on what you ask for:
 
-**What it does:**
+| Mode | When | What it does |
+|---|---|---|
+| **create** (default) | A `.feature` exists and needs automation | Inspects the live page (`scripts/inspect-page.mjs`, falling back to the Playwright MCP tools), then writes the Page Object (`isLoaded()`/`open()` pattern, `robustLocator()`) and step definitions, and runs the suite to confirm green. |
+| **fix** | A test is failing | Runs `npm test` if no error was given, diagnoses (broken locator / step mismatch / missing `await` / wrong assertion / bad fixture data), applies the minimal fix, and reruns. |
+| **refactor** | Locators are fragile | Scans `pages/` for `this.page.locator(...)` not wrapped in `robustLocator()`, inspects the real page, and upgrades them — reverting anything that causes a regression. |
 
-1. Runs `npm test` (if no argument given) and identifies the failing step.
-2. Reads the feature file, step definitions, and page object.
-3. Inspects the live page only when the error is locator-related.
-4. Applies the minimal fix (broken locator, mismatched step text, missing `await`, wrong assertion, or bad test data) and re-runs the suite to verify.
-
-**Example:**
-
-```
-/fix-test steps/landingPage/roomBooking/roomBooking.steps.ts
-```
-
----
-
-### `/generate-test-cases <input>`
-
-Generates Gherkin scenarios from a Jira ticket or a natural-language description. **Output only — no files are written.** Review the output, then run `/create-test` to implement it.
-
-**What it does:**
-
-1. Extracts the user story, acceptance criteria, and edge cases from the input.
-2. Matches the existing feature file style.
-3. Outputs the complete `.feature` content plus a traceability table mapping each AC to its scenario(s).
-
-**Example:**
+**Example prompts:**
 
 ```
-/generate-test-cases As a guest I want to contact the hotel so that I can ask questions before booking. Required fields: name, email, message. Show success banner on submit.
+Use the qa-automation agent to implement features/landingPage/roomBooking/roomBooking.feature.
+
+Use the qa-automation agent (fix mode) to fix the failing test in steps/landingPage/roomBooking/roomBooking.steps.ts.
+
+Use the qa-automation agent (refactor mode) on pages/landing/LandingPage.ts.
 ```
 
 ---
 
-### `/refactor-locators [file-path]`
+### `qa-explorer` — exploratory testing (SBTM), no script
 
-Upgrades fragile `page.locator('#id')` calls to `robustLocator()` chains that follow Playwright's recommended priority. Pass a specific file path or run without arguments to refactor all page objects.
+Session-based exploratory testing against the live demo site, driven by a natural-language intent instead of a pre-written script. Drives the Playwright MCP tools already registered in `.mcp.json`. Read-only by default (navigation, tabs, toggles); never clicks a final "confirm/submit"-type action unless the intent explicitly asks for it, and never more than once per session. Every finding cites either a Nielsen heuristic or a reproducible, observable behavior (console error, failed request) — no impressionistic findings.
 
 **What it does:**
 
-1. Scans `pages/` for any `this.page.locator(` call not already wrapped in `this.robustLocator()`.
-2. Runs `scripts/inspect-page.mjs` against the page URL to get semantic alternatives.
-3. Replaces each single locator with a `robustLocator()` chain (up to 3 options, ordered `getByRole` → `getByLabel` → `getByPlaceholder` → `getByTestId` → `locator`).
-4. Runs `npm test` after refactoring and reverts any locator that causes a regression.
+1. Walks a set of routes/interactions sized by `depth` (`quick`/`standard`/`deep`), capturing accessibility snapshots, console errors, and network failures.
+2. Checks `features/**/*.feature` before reporting a finding — if a scenario already covers it, it's not a new finding.
+3. Writes `tmp/qa-explorer/<slug>/explore-results.json` (findings, severity, Nielsen citation, repro steps) and prints a summary.
 
-**Example:**
+**Example prompt:**
 
 ```
-/refactor-locators pages/landing/LandingPage.ts
+Use the qa-explorer agent to explore the booking flow for edge cases around date selection.
 ```
+
+A finding that turns out to be a real bug or coverage gap gets handed to `qa` to become a proper traced Scenario — `qa-explorer` never writes `.feature` files or code itself.
+
+---
+
+All three agents share the project's real conventions (`BasePage.robustLocator()`, the `isLoaded()`/`open()` contract, `fixtures/testData.json`, locator priority `getByRole > getByLabel > getByPlaceholder > getByTestId > locator`, ISTQB test design techniques, SOLID applied to test code, anti-patterns) via the shared skill — see `.claude/skills/playwright-bdd/SKILL.md` for the full standard, and `.claude/agents/qa.md` / `qa-automation.md` / `qa-explorer.md` for each agent's specific contract.
